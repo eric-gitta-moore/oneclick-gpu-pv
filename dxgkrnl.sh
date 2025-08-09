@@ -2,7 +2,7 @@
 BRANCH=linux-msft-wsl-6.6.y
 
 if [ "$EUID" -ne 0 ]; then
-    echo "Swithing to root..."
+    echo "Switching to root..."
     exec sudo $0 "$@"
 fi
 
@@ -30,15 +30,7 @@ DEST_MODULE_LOCATION="/kernel/drivers/hv/dxgkrnl/"
 AUTOINSTALL="yes"
 EOF
 
+dkms add dxgkrnl/$VERSION
 dkms build dxgkrnl/$VERSION
 dkms install dxgkrnl/$VERSION
 modprobe dxgkrnl
-
-
-add-apt-repository ppa:kisak/kisak-mesa
-apt install -y mesa-utils
-
-echo "export LIBVA_DRIVER_NAME=d3d12" > /etc/profile.d/d3d.sh
-echo "export MESA_LOADER_DRIVER_OVERRIDE=vgem" >> /etc/profile.d/d3d.sh
-
-echo "DONE"
