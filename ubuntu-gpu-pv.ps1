@@ -4,33 +4,62 @@ $userName = Read-Host "Input vm admin user name, should have sudoers group"
 $vmobject = Get-VM | Out-GridView -Title "Select VM to setup GPU-P" -OutputMode Single
 $vmName = $vmobject.Name
 
+# region choose gpu
 $dev = Get-PnpDevice -Class Display -Status OK | Out-GridView -Title "Select Card to setup GPU-P" -OutputMode Single
 
 $props = $dev | Get-PnpDeviceProperty
-$pnpinf = ($props | where {$_.KeyName -eq "DEVPKEY_Device_DriverInfPath"}).Data
-$infsection = ($props | where {$_.KeyName -eq "DEVPKEY_Device_DriverInfSection"}).Data
-$cbsinf = (Get-WindowsDriver -Online | where {$_.Driver -eq "$pnpinf"}).OriginalFileName
+$pnpinf = ($props | where { $_.KeyName -eq "DEVPKEY_Device_DriverInfPath" }).Data
+$infsection = ($props | where { $_.KeyName -eq "DEVPKEY_Device_DriverInfSection" }).Data
+$cbsinf = (Get-WindowsDriver -Online | where { $_.Driver -eq "$pnpinf" }).OriginalFileName
 If (-not $cbsinf) {
 	Write-Host "Device not supported: $dev, inf: $pnpinf, cbs: $cbsinf"
 	return;
 }
 
 $gpuName = $dev.FriendlyName
-$path = "\\?\" + $dev.InstanceId.replace('\', '#').ToLower() + "#{064092b3-625e-43bf-9eb5-dc845897dd59}\GPUPARAV"
+$path = $dev.InstanceId.replace('\', '#').ToLower()
+$pvs = Get-VMHostPartitionableGpu
+$targetGpu = $null
+foreach ($pv in $pvs) {
+	$name = $pv.Name.ToLower()
+	echo "$name"
+	if ($name.contains($path)) {
+		$targetGpu = $pv
+		$path = $pv.Name
+	}
+}
 
-Stop-VM $vmName
-Start-Sleep -m 10000
+echo "============================"
+echo "Using: $gpuName, pnpinf: $pnpinf, path: $path"
+echo "============================"
+# endregion choose gpu
 
-#Configure GPU for VM
-Add-VMGpuPartitionAdapter $vmName -InstancePath "$path"
-Set-VM -GuestControlledCacheTypes $true -VMName $vmName
-Set-VM -LowMemoryMappedIoSpace 1Gb -VMName $vmName
-Set-VM -HighMemoryMappedIoSpace 32GB -VMName $vmName
+# region setup GPU-PV
+Write-Host "Stopping VM"
+$vmobject | Stop-VM
+Write-Host "Configuring GPU-PV for VM"
+$vmobject | Add-VMGpuPartitionAdapter -InstancePath "$path"
+$vmobject | Set-VMGpuPartitionAdapter  `
+	-MinPartitionVRAM $targetGpu.MinPartitionVRAM `
+	-MaxPartitionVRAM $targetGpu.MaxPartitionVRAM `
+	-OptimalPartitionVRAM $targetGpu.OptimalPartitionVRAM `
+	-MinPartitionEncode $targetGpu.MinPartitionEncode `
+	-MaxPartitionEncode $targetGpu.MaxPartitionEncode `
+	-OptimalPartitionEncode $targetGpu.OptimalPartitionEncode `
+	-MinPartitionDecode $targetGpu.MinPartitionDecode `
+	-MaxPartitionDecode $targetGpu.MaxPartitionDecode `
+	-OptimalPartitionDecode $targetGpu.OptimalPartitionDecode `
+	-MinPartitionCompute $targetGpu.MinPartitionCompute `
+	-MaxPartitionCompute $targetGpu.MaxPartitionCompute `
+	-OptimalPartitionCompute $targetGpu.OptimalPartitionCompute
+$vmobject | Set-VM -GuestControlledCacheTypes $true -LowMemoryMappedIoSpace 1Gb -HighMemoryMappedIoSpace 32GB
+# endregion setup GPU-PV
+
 
 Start-VM $vmName
 Start-Sleep -m 10000
 
-$remoteAddr="$userName@$vmIpAddr"
+$remoteAddr = "$userName@$vmIpAddr"
 
 echo ""
 echo "Onclick GPU-PV for Ubuntu: using $remoteAddr"
