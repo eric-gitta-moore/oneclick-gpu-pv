@@ -18,6 +18,8 @@ cp include/uapi/misc/d3dkmthk.h /usr/src/dxgkrnl-$VERSION/inc/uapi/misc/d3dkmthk
 cp include/linux/hyperv.h /usr/src/dxgkrnl-$VERSION/inc/linux/hyperv_dxgkrnl.h
 sed -i 's/\$(CONFIG_DXGKRNL)/m/' /usr/src/dxgkrnl-$VERSION/Makefile
 sed -i 's#linux/hyperv.h#linux/hyperv_dxgkrnl.h#' /usr/src/dxgkrnl-$VERSION/dxgmodule.c
+# if 6.8 kernel
+# sed -i 's#eventfd_signal(event->cpu_event, 1);#eventfd_signal(event->cpu_event);#' /usr/src/dxgkrnl-$VERSION/dxgmodule.c
 echo "EXTRA_CFLAGS=-I\$(PWD)/inc" >> /usr/src/dxgkrnl-$VERSION/Makefile
 
 cat > /usr/src/dxgkrnl-$VERSION/dkms.conf <<EOF
