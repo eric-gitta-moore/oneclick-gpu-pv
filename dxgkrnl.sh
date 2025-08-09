@@ -34,3 +34,5 @@ dkms add dxgkrnl/$VERSION
 dkms build dxgkrnl/$VERSION
 dkms install dxgkrnl/$VERSION
 modprobe dxgkrnl
+
+echo "DONE"
