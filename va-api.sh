@@ -1,5 +1,9 @@
 #!/bin/bash -e
-add-apt-repository ppa:kisak/kisak-mesa
+
+# Bionic (18.04), Focal (20.04), Jammy (22.04) - Discontinued - Long term users can use kisak-mesa stable
+# https://launchpad.net/~kisak/+archive/ubuntu/turtle
+add-apt-repository ppa:kisak/turtle
+
 apt install -y mesa-utils
 
 # if ls: cannot access '/dev/dri/card0': No such file or directory
