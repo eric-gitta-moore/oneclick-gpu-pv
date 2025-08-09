@@ -1,6 +1,3 @@
-$vmIpAddr = Read-Host "Input the vm IP address, should be reachable within WSL" 
-$userName = Read-Host "Input vm admin user name, should have sudoers group" 
-
 $vmobject = Get-VM | Out-GridView -Title "Select VM to setup GPU-P" -OutputMode Single
 $vmName = $vmobject.Name
 
@@ -37,7 +34,9 @@ echo "============================"
 # region setup GPU-PV
 Write-Host "Stopping VM"
 $vmobject | Stop-VM
+
 Write-Host "Configuring GPU-PV for VM"
+$vmobject | Remove-VMGpuPartitionAdapter
 $vmobject | Add-VMGpuPartitionAdapter -InstancePath "$path"
 $vmobject | Set-VMGpuPartitionAdapter  `
 	-MinPartitionVRAM $targetGpu.MinPartitionVRAM `
@@ -59,6 +58,8 @@ $vmobject | Set-VM -GuestControlledCacheTypes $true -LowMemoryMappedIoSpace 1Gb 
 Start-VM $vmName
 Start-Sleep -m 10000
 
+$vmIpAddr = Read-Host "Input the vm IP address, should be reachable within WSL" 
+$userName = Read-Host "Input vm admin user name, should have sudoers group" 
 $remoteAddr = "$userName@$vmIpAddr"
 
 echo ""
@@ -78,8 +79,7 @@ wsl ssh $remoteAddr "sudo -S mv ~/lib/* /usr/lib;sudo -S ln -s /lib/libd3d12core
 
 
 #Install dxgknrl module
-wsl scp -r ./dxgkrnl-dkms.zip $remoteAddr\:~
-wsl ssh $remoteAddr "unzip ~/dxgkrnl-dkms.zip"
-wsl ssh $remoteAddr "cd ~/dxgkrnl-dkms;chmod +x ~/dxgkrnl-dkms/install.sh;sudo -S ~/dxgkrnl-dkms/install.sh"
+wsl scp -r ./dxgkrnl.sh $remoteAddr\:~
+wsl ssh $remoteAddr "chmod +x ~/dxgkrnl.sh;sudo -S ~/dxgkrnl.sh"
 
 echo "ALL DONE, ENJOY"
