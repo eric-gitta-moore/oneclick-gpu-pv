@@ -6,7 +6,8 @@ if [ "$EUID" -ne 0 ]; then
     exec sudo $0 "$@"
 fi
 
-apt-get install -y git dkms
+apt update
+apt install -y git dkms
 
 git clone -b $BRANCH --depth=1 https://github.com/microsoft/WSL2-Linux-Kernel
 cd WSL2-Linux-Kernel
