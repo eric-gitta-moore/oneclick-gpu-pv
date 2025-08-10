@@ -1,4 +1,5 @@
 #!/bin/bash -e
+# supports 6.6.x - 6.14.x
 BRANCH=linux-msft-wsl-6.6.y
 
 if [ "$EUID" -ne 0 ]; then
