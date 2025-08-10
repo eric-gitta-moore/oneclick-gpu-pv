@@ -14,11 +14,8 @@ $vmobject = Get-VM | Out-GridView -Title "Select VM to setup GPU-P" -OutputMode 
 $vmid = $vmobject.VMId
 Write-Host "Stopping VM"
 $vmobject | Stop-VM
-Write-Host "Disabling checkpoints for VM"
-$vmobject | Set-VM -CheckpointType Disabled
 Write-Host "Enabling heartbeat service for VM"
 $vmobject | Enable-VMIntegrationService -Name $signalLabel
-if ($vmobject | Get-VMGpuPartitionAdapter) { $vmobject | Remove-VMGpuPartitionAdapter }
 Write-Host "Starting VM"
 $vmobject | Start-VM
 do { Start-Sleep 2 } while (($vmobject | Get-VMIntegrationService -Name $signalLabel).PrimaryStatusDescription -ne $okLabel)
@@ -95,7 +92,9 @@ rmdir /s /q %dirname%
 # region setup GPU-PV
 Write-Host "Stopping VM"
 $vmobject | Stop-VM
+
 Write-Host "Configuring GPU-PV for VM"
+if ($vmobject | Get-VMGpuPartitionAdapter) { $vmobject | Remove-VMGpuPartitionAdapter }
 $vmobject | Add-VMGpuPartitionAdapter -InstancePath "$path"
 $vmobject | Set-VMGpuPartitionAdapter  `
 	-MinPartitionVRAM $targetGpu.MinPartitionVRAM `

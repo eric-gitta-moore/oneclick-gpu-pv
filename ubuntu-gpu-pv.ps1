@@ -36,7 +36,7 @@ Write-Host "Stopping VM"
 $vmobject | Stop-VM
 
 Write-Host "Configuring GPU-PV for VM"
-$vmobject | Remove-VMGpuPartitionAdapter
+if ($vmobject | Get-VMGpuPartitionAdapter) { $vmobject | Remove-VMGpuPartitionAdapter }
 $vmobject | Add-VMGpuPartitionAdapter -InstancePath "$path"
 $vmobject | Set-VMGpuPartitionAdapter  `
 	-MinPartitionVRAM $targetGpu.MinPartitionVRAM `
