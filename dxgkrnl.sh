@@ -31,7 +31,7 @@ DEST_MODULE_LOCATION="/kernel/drivers/hv/dxgkrnl/"
 AUTOINSTALL="yes"
 EOF
 
-dkms add dxgkrnl/$VERSION
+# dkms add dxgkrnl/$VERSION
 dkms build dxgkrnl/$VERSION
 dkms install dxgkrnl/$VERSION
 # modprobe dxgkrnl
