@@ -19,9 +19,17 @@ cp include/uapi/misc/d3dkmthk.h /usr/src/dxgkrnl-$VERSION/inc/uapi/misc/d3dkmthk
 cp include/linux/hyperv.h /usr/src/dxgkrnl-$VERSION/inc/linux/hyperv_dxgkrnl.h
 sed -i 's/\$(CONFIG_DXGKRNL)/m/' /usr/src/dxgkrnl-$VERSION/Makefile
 sed -i 's#linux/hyperv.h#linux/hyperv_dxgkrnl.h#' /usr/src/dxgkrnl-$VERSION/dxgmodule.c
+echo "EXTRA_CFLAGS=-I\$(PWD)/inc" >> /usr/src/dxgkrnl-$VERSION/Makefile
+
+# make -j10 KERNELRELEASE=`uname -r` -C /lib/modules/`uname -r`/build M=/var/lib/dkms/dxgkrnl/$VERSION/build
 # if 6.8 kernel
 sed -i 's#eventfd_signal(event->cpu_event, 1);#eventfd_signal(event->cpu_event);#' /usr/src/dxgkrnl-$VERSION/dxgmodule.c
-echo "EXTRA_CFLAGS=-I\$(PWD)/inc" >> /usr/src/dxgkrnl-$VERSION/Makefile
+# if 6.12 kernal
+sed -i '1i#include <linux/vmalloc.h>' /usr/src/dxgkrnl-$VERSION/dxgvmbus.c
+sed -i '1i#include <linux/vmalloc.h>' /usr/src/dxgkrnl-$VERSION/hmgr.c
+sed -i '1i#include <linux/vmalloc.h>' /usr/src/dxgkrnl-$VERSION/dxgadapter.c
+sed -i '1i#include <linux/vmalloc.h>' /usr/src/dxgkrnl-$VERSION/ioctl.c
+
 
 cat > /usr/src/dxgkrnl-$VERSION/dkms.conf <<EOF
 PACKAGE_NAME="dxgkrnl"
@@ -35,5 +43,9 @@ EOF
 dkms build dxgkrnl/$VERSION
 dkms install dxgkrnl/$VERSION
 # modprobe dxgkrnl
+# modprobe vgem
 
+# check
+lsmod | grep dxgkrnl
 echo "DONE"
+
